@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,6 +23,7 @@ class _RequestPageState extends State<RequestPage> {
   late final TextEditingController _queryController;
   late final TextEditingController _bodyController;
   late final TextEditingController _curlController;
+  BodyFormat _bodyFormat = BodyFormat.json;
 
   @override
   void initState() {
@@ -64,6 +67,75 @@ class _RequestPageState extends State<RequestPage> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 1200;
+              final compactBottomSection = constraints.maxWidth < 980;
+              final requiresPageScroll = constraints.maxHeight <
+                  (stacked || compactBottomSection ? 980 : 720);
+
+              if (requiresPageScroll) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      children: <Widget>[
+                        if (stacked)
+                          Column(
+                            children: <Widget>[
+                              SizedBox(
+                                height: 520,
+                                child: _buildEditor(context, state),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 360,
+                                child: _buildResponse(context, state),
+                              ),
+                            ],
+                          )
+                        else
+                          SizedBox(
+                            height: 520,
+                            child: Row(
+                              children: <Widget>[
+                                Expanded(child: _buildEditor(context, state)),
+                                const SizedBox(width: 16),
+                                Expanded(child: _buildResponse(context, state)),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        if (compactBottomSection)
+                          Column(
+                            children: <Widget>[
+                              SizedBox(
+                                height: 260,
+                                child: _buildCurlTools(context, state),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 260,
+                                child: _buildHistory(context, state),
+                              ),
+                            ],
+                          )
+                        else
+                          SizedBox(
+                            height: 260,
+                            child: Row(
+                              children: <Widget>[
+                                Expanded(
+                                    child: _buildCurlTools(context, state)),
+                                const SizedBox(width: 16),
+                                Expanded(child: _buildHistory(context, state)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               return Column(
                 children: <Widget>[
                   Expanded(
@@ -85,14 +157,22 @@ class _RequestPageState extends State<RequestPage> {
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 260,
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(child: _buildCurlTools(context, state)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildHistory(context, state)),
-                      ],
-                    ),
+                    height: compactBottomSection ? 536 : 260,
+                    child: compactBottomSection
+                        ? Column(
+                            children: <Widget>[
+                              Expanded(child: _buildCurlTools(context, state)),
+                              const SizedBox(height: 16),
+                              Expanded(child: _buildHistory(context, state)),
+                            ],
+                          )
+                        : Row(
+                            children: <Widget>[
+                              Expanded(child: _buildCurlTools(context, state)),
+                              const SizedBox(width: 16),
+                              Expanded(child: _buildHistory(context, state)),
+                            ],
+                          ),
                   ),
                 ],
               );
@@ -108,102 +188,105 @@ class _RequestPageState extends State<RequestPage> {
 
     return PanelCard(
       elevated: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const SectionTitle(
-            title: 'Request Editor',
-            subtitle:
-                'Compose HTTP requests with a desktop-first workbench inspired by Terminal and WinUI tools.',
-          ),
-          const SizedBox(height: 18),
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compactHeader = constraints.maxWidth < 560;
+          final compactFields = constraints.maxWidth < 760;
+
+          final fieldsSection = compactFields
+              ? Column(
+                  children: <Widget>[
+                    Expanded(
+                      child: _EditorField(
+                        title: 'Headers',
+                        placeholder: 'Authorization: Bearer token',
+                        controller: _headersController,
+                        onChanged: cubit.updateHeaders,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: _EditorField(
+                        title: 'Query Params',
+                        placeholder: 'page=1',
+                        controller: _queryController,
+                        onChanged: cubit.updateQueryParams,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: _EditorField(
+                        title: 'Headers',
+                        placeholder: 'Authorization: Bearer token',
+                        controller: _headersController,
+                        onChanged: cubit.updateHeaders,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _EditorField(
+                        title: 'Query Params',
+                        placeholder: 'page=1',
+                        controller: _queryController,
+                        onChanged: cubit.updateQueryParams,
+                      ),
+                    ),
+                  ],
+                );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              SizedBox(
-                width: 150,
-                child: ComboBox<HttpMethodEnum>(
-                  value: state.method,
-                  items: HttpMethodEnum.values
-                      .map(
-                        (method) => ComboBoxItem<HttpMethodEnum>(
-                          value: method,
-                          child: Text(method.label),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      cubit.updateMethod(value);
-                    }
+              const SectionTitle(
+                title: 'Request Editor',
+                subtitle:
+                    'Compose HTTP requests with a desktop-first workbench inspired by Terminal and WinUI tools.',
+              ),
+              const SizedBox(height: 18),
+              _RequestHeaderBar(
+                compact: compactHeader,
+                state: state,
+                urlController: _urlController,
+                onMethodChanged: cubit.updateMethod,
+                onUrlChanged: cubit.updateUrl,
+                onExecute: cubit.execute,
+              ),
+              const SizedBox(height: 18),
+              Expanded(child: fieldsSection),
+              const SizedBox(height: 16),
+              Expanded(
+                child: _BodyEditorField(
+                  controller: _bodyController,
+                  onChanged: cubit.updateBody,
+                  selectedFormat: _bodyFormat,
+                  onFormatChanged: (format) {
+                    setState(() {
+                      _bodyFormat = format;
+                    });
+                  },
+                  onFormatPressed: () {
+                    final formattedBody = _tryFormatBody(
+                      _bodyController.text,
+                      _bodyFormat,
+                    );
+                    _bodyController.value = _bodyController.value.copyWith(
+                      text: formattedBody,
+                      selection: TextSelection.collapsed(
+                        offset: formattedBody.length,
+                      ),
+                      composing: TextRange.empty,
+                    );
+                    cubit.updateBody(formattedBody);
                   },
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextBox(
-                  controller: _urlController,
-                  placeholder: 'https://api.example.com/v1/users',
-                  onChanged: cubit.updateUrl,
-                  style: const TextStyle(
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: state.isLoading ? null : cubit.execute,
-                child: state.isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: ProgressRing(strokeWidth: 2),
-                      )
-                    : const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Icon(FluentIcons.send, size: 14),
-                          SizedBox(width: 8),
-                          Text('Send'),
-                        ],
-                      ),
-              ),
             ],
-          ),
-          const SizedBox(height: 18),
-          Expanded(
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: _EditorField(
-                    title: 'Headers',
-                    placeholder: 'Authorization: Bearer token',
-                    controller: _headersController,
-                    onChanged: cubit.updateHeaders,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _EditorField(
-                    title: 'Query Params',
-                    placeholder: 'page=1',
-                    controller: _queryController,
-                    onChanged: cubit.updateQueryParams,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _EditorField(
-              title: 'Body',
-              placeholder: '{\n  "name": "Hermes"\n}',
-              controller: _bodyController,
-              onChanged: cubit.updateBody,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -231,9 +314,14 @@ class _RequestPageState extends State<RequestPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: <Widget>[
-                    _MetricPill(label: 'Status', value: '${response.statusCode ?? '-'}'),
-                    _MetricPill(label: 'Time', value: '${response.duration.inMilliseconds} ms'),
-                    _MetricPill(label: 'Headers', value: '${response.headers.length}'),
+                    _MetricPill(
+                        label: 'Status',
+                        value: '${response.statusCode ?? '-'}'),
+                    _MetricPill(
+                        label: 'Time',
+                        value: '${response.duration.inMilliseconds} ms'),
+                    _MetricPill(
+                        label: 'Headers', value: '${response.headers.length}'),
                   ],
                 ),
             ],
@@ -249,7 +337,8 @@ class _RequestPageState extends State<RequestPage> {
           if (response == null)
             const Expanded(
               child: Center(
-                child: Text('Send a request to inspect status, headers and body.'),
+                child:
+                    Text('Send a request to inspect status, headers and body.'),
               ),
             )
           else
@@ -259,7 +348,9 @@ class _RequestPageState extends State<RequestPage> {
                   Expanded(
                     child: _CodePanel(
                       title: 'Body',
-                      content: response.body.isEmpty ? 'No body returned.' : response.body,
+                      content: response.body.isEmpty
+                          ? 'No body returned.'
+                          : response.body,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -295,7 +386,8 @@ class _RequestPageState extends State<RequestPage> {
           Expanded(
             child: TextBox(
               controller: _curlController,
-              placeholder: "curl -X POST 'https://api.example.com' -H 'Content-Type: application/json'",
+              placeholder:
+                  "curl -X POST 'https://api.example.com' -H 'Content-Type: application/json'",
               onChanged: cubit.updateCurlInput,
               maxLines: null,
               expands: true,
@@ -353,7 +445,8 @@ class _RequestPageState extends State<RequestPage> {
                   )
                 : ListView.separated(
                     itemCount: state.history.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final request = state.history[index];
                       return _HistoryTile(
@@ -378,6 +471,120 @@ class _RequestPageState extends State<RequestPage> {
   }
 }
 
+enum BodyFormat {
+  json('JSON'),
+  xml('XML'),
+  html('HTML'),
+  yaml('YAML'),
+  javascript('JavaScript'),
+  markdown('Markdown'),
+  raw('Raw'),
+  hex('Hex'),
+  base64('Base64');
+
+  const BodyFormat(this.label);
+
+  final String label;
+}
+
+class _RequestHeaderBar extends StatelessWidget {
+  const _RequestHeaderBar({
+    required this.compact,
+    required this.state,
+    required this.urlController,
+    required this.onMethodChanged,
+    required this.onUrlChanged,
+    required this.onExecute,
+  });
+
+  final bool compact;
+  final RequestWorkbenchState state;
+  final TextEditingController urlController;
+  final ValueChanged<HttpMethodEnum> onMethodChanged;
+  final ValueChanged<String> onUrlChanged;
+  final Future<void> Function() onExecute;
+
+  @override
+  Widget build(BuildContext context) {
+    final methodPicker = SizedBox(
+      width: compact ? double.infinity : 150,
+      child: ComboBox<HttpMethodEnum>(
+        value: state.method,
+        items: HttpMethodEnum.values
+            .map(
+              (method) => ComboBoxItem<HttpMethodEnum>(
+                value: method,
+                child: Text(method.label),
+              ),
+            )
+            .toList(),
+        onChanged: (value) {
+          if (value != null) {
+            onMethodChanged(value);
+          }
+        },
+      ),
+    );
+
+    final urlField = TextBox(
+      controller: urlController,
+      placeholder: 'https://api.example.com/v1/users',
+      onChanged: onUrlChanged,
+      style: const TextStyle(
+        fontFamily: 'JetBrains Mono',
+        fontSize: 13,
+      ),
+    );
+
+    final sendButton = SizedBox(
+      width: compact ? double.infinity : null,
+      child: FilledButton(
+        onPressed: state.isLoading ? null : onExecute,
+        child: state.isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: ProgressRing(strokeWidth: 2),
+              )
+            : const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(FluentIcons.send, size: 14),
+                  SizedBox(width: 8),
+                  Text('Send'),
+                ],
+              ),
+      ),
+    );
+
+    if (compact) {
+      return Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(child: methodPicker),
+              const SizedBox(width: 12),
+              sendButton,
+            ],
+          ),
+          const SizedBox(height: 12),
+          urlField,
+        ],
+      );
+    }
+
+    return Row(
+      children: <Widget>[
+        methodPicker,
+        const SizedBox(width: 12),
+        Expanded(child: urlField),
+        const SizedBox(width: 12),
+        sendButton,
+      ],
+    );
+  }
+}
+
 class _EditorField extends StatelessWidget {
   const _EditorField({
     required this.title,
@@ -393,6 +600,19 @@ class _EditorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textBox = TextBox(
+      controller: controller,
+      onChanged: onChanged,
+      maxLines: null,
+      expands: true,
+      minLines: null,
+      placeholder: placeholder,
+      style: const TextStyle(
+        fontFamily: 'JetBrains Mono',
+        fontSize: 12.5,
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -401,21 +621,149 @@ class _EditorField extends StatelessWidget {
           style: FluentTheme.of(context).typography.subtitle,
         ),
         const SizedBox(height: 8),
-        Expanded(
-          child: TextBox(
-            controller: controller,
-            onChanged: onChanged,
-            maxLines: null,
-            expands: true,
-            minLines: null,
-            placeholder: placeholder,
-            style: const TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 12.5,
-            ),
-          ),
-        ),
+        Expanded(child: textBox),
       ],
+    );
+  }
+}
+
+class _BodyEditorField extends StatelessWidget {
+  const _BodyEditorField({
+    required this.controller,
+    required this.onChanged,
+    required this.selectedFormat,
+    required this.onFormatChanged,
+    required this.onFormatPressed,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final BodyFormat selectedFormat;
+  final ValueChanged<BodyFormat> onFormatChanged;
+  final VoidCallback onFormatPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final lineCount = _countLines(controller.text);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compactToolbar = constraints.maxWidth < 620;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (compactToolbar)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        'Body',
+                        style: FluentTheme.of(context).typography.subtitle,
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$lineCount lines',
+                        style: FluentTheme.of(context)
+                            .typography
+                            .caption
+                            ?.copyWith(
+                              color: const Color(0xFFB7BEC8),
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: ComboBox<BodyFormat>(
+                          value: selectedFormat,
+                          items: BodyFormat.values
+                              .map(
+                                (format) => ComboBoxItem<BodyFormat>(
+                                  value: format,
+                                  child: Text(format.label),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              onFormatChanged(value);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Button(
+                        onPressed: onFormatPressed,
+                        child: const Text('Format'),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: <Widget>[
+                  Text(
+                    'Body',
+                    style: FluentTheme.of(context).typography.subtitle,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$lineCount lines',
+                    style: FluentTheme.of(context).typography.caption?.copyWith(
+                          color: const Color(0xFFB7BEC8),
+                        ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 140,
+                    child: ComboBox<BodyFormat>(
+                      value: selectedFormat,
+                      items: BodyFormat.values
+                          .map(
+                            (format) => ComboBoxItem<BodyFormat>(
+                              value: format,
+                              child: Text(format.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          onFormatChanged(value);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Button(
+                    onPressed: onFormatPressed,
+                    child: const Text('Format'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: TextBox(
+                controller: controller,
+                onChanged: onChanged,
+                maxLines: null,
+                expands: true,
+                minLines: null,
+                placeholder: '{\n  "name": "Hermes"\n}',
+                style: const TextStyle(
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 12.5,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -448,6 +796,102 @@ class _MetricPill extends StatelessWidget {
   }
 }
 
+int _countLines(String value) {
+  if (value.isEmpty) {
+    return 1;
+  }
+  return '\n'.allMatches(value).length + 1;
+}
+
+String _tryFormatBody(String value, BodyFormat format) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return value;
+  }
+
+  try {
+    switch (format) {
+      case BodyFormat.json:
+      case BodyFormat.javascript:
+        final decoded = jsonDecode(value);
+        return const JsonEncoder.withIndent('  ').convert(decoded);
+      case BodyFormat.base64:
+        final decoded = utf8.decode(base64Decode(trimmed));
+        try {
+          return _tryFormatBody(decoded, BodyFormat.json);
+        } catch (_) {
+          return decoded;
+        }
+      case BodyFormat.hex:
+        final decoded = utf8.decode(_decodeHex(trimmed));
+        return decoded;
+      case BodyFormat.xml:
+      case BodyFormat.html:
+        return _formatMarkup(trimmed);
+      case BodyFormat.yaml:
+        return _normalizeIndentedLines(trimmed);
+      case BodyFormat.markdown:
+      case BodyFormat.raw:
+        return value;
+    }
+  } catch (_) {
+    return value;
+  }
+}
+
+List<int> _decodeHex(String value) {
+  final sanitized = value
+      .replaceAll(' ', '')
+      .replaceAll('\n', '')
+      .replaceAll('\r', '')
+      .replaceAll('\t', '');
+  if (sanitized.length.isOdd) {
+    throw const FormatException('Invalid hex length');
+  }
+
+  return <int>[
+    for (int i = 0; i < sanitized.length; i += 2)
+      int.parse(sanitized.substring(i, i + 2), radix: 16),
+  ];
+}
+
+String _normalizeIndentedLines(String value) {
+  return value.split('\n').map((line) => line.trimRight()).join('\n');
+}
+
+String _formatMarkup(String value) {
+  final tokens = value
+      .replaceAll('><', '>\n<')
+      .split('\n')
+      .map((token) => token.trim())
+      .where((token) => token.isNotEmpty);
+
+  final buffer = StringBuffer();
+  var indent = 0;
+
+  for (final token in tokens) {
+    final isClosingTag = token.startsWith('</');
+    final isDeclaration = token.startsWith('<?') || token.startsWith('<!');
+    final isSelfClosingTag =
+        token.endsWith('/>') || !token.startsWith('<') || token.contains('</');
+
+    if (isClosingTag && indent > 0) {
+      indent--;
+    }
+
+    buffer.writeln('${'  ' * indent}$token');
+
+    if (!isClosingTag &&
+        !isDeclaration &&
+        !isSelfClosingTag &&
+        token.startsWith('<')) {
+      indent++;
+    }
+  }
+
+  return buffer.toString().trimRight();
+}
+
 class _CodePanel extends StatelessWidget {
   const _CodePanel({
     required this.title,
@@ -467,25 +911,21 @@ class _CodePanel extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: <Widget>[
             Text(
               title,
               style: FluentTheme.of(context).typography.subtitle,
             ),
             const SizedBox(height: 10),
-            Expanded(
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  content,
-                  style: const TextStyle(
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: 12.5,
-                    color: Color(0xFFF3F5F7),
-                    height: 1.55,
-                  ),
-                ),
+            SelectableText(
+              content,
+              style: const TextStyle(
+                fontFamily: 'JetBrains Mono',
+                fontSize: 12.5,
+                color: Color(0xFFF3F5F7),
+                height: 1.55,
               ),
             ),
           ],

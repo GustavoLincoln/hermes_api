@@ -9,6 +9,7 @@ import '../../modules/curl/presentation/pages/curl_page.dart';
 import '../../modules/environments/presentation/pages/environments_page.dart';
 import '../../modules/requests/presentation/cubit/request_workbench_cubit.dart';
 import '../../modules/requests/presentation/pages/request_page.dart';
+import '../../shared/window_bar/widgets/app_window_title_bar.dart';
 import '../../shared/widgets/panel_card.dart';
 
 class AppRouter {
@@ -19,7 +20,11 @@ class AppRouter {
     routes: <RouteBase>[
       ShellRoute(
         builder: (context, state, child) {
-          return _HermesShell(currentPath: state.uri.path, child: child);
+          return _HermesShell(
+            currentPath: state.uri.path,
+            sectionTitle: _titleForPath(state.uri.path),
+            child: child,
+          );
         },
         routes: <RouteBase>[
           GoRoute(
@@ -47,9 +52,14 @@ class AppRouter {
 }
 
 class _HermesShell extends StatefulWidget {
-  const _HermesShell({required this.currentPath, required this.child});
+  const _HermesShell({
+    required this.currentPath,
+    required this.sectionTitle,
+    required this.child,
+  });
 
   final String currentPath;
+  final String sectionTitle;
   final Widget child;
 
   @override
@@ -76,10 +86,9 @@ class _HermesShellState extends State<_HermesShell> {
         ),
         child: NavigationView(
           clipBehavior: Clip.antiAlias,
-          titleBar: _HermesTitleBar(
-            currentPath: widget.currentPath,
-            isCompact: _isCompact,
-            onTogglePane: () {
+          titleBar: AppWindowTitleBar(
+            sectionTitle: widget.sectionTitle,
+            onToggleMenu: () {
               setState(() {
                 _isCompact = !_isCompact;
               });
@@ -149,116 +158,6 @@ class _HermesShellState extends State<_HermesShell> {
         context.go('/curl');
       default:
         context.go('/requests');
-    }
-  }
-}
-
-class _HermesTitleBar extends StatelessWidget {
-  const _HermesTitleBar({
-    required this.currentPath,
-    required this.isCompact,
-    required this.onTogglePane,
-  });
-
-  final String currentPath;
-  final bool isCompact;
-  final VoidCallback onTogglePane;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-
-    return WindowTitleBarBox(
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.only(left: 12, right: 8),
-        decoration: BoxDecoration(
-          color: const Color(0x44181B20),
-          border: Border(bottom: BorderSide(color: const Color(0x443D434C))),
-        ),
-        child: Row(
-          children: <Widget>[
-            Button(
-              onPressed: onTogglePane,
-              style: ButtonStyle(
-                padding: const WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                ),
-                backgroundColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.hovered)) {
-                    return const Color(0x221A1D21);
-                  }
-                  return Colors.transparent;
-                }),
-              ),
-              child: Icon(
-                isCompact ? FluentIcons.global_nav_button : FluentIcons.back,
-                size: 14,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD700),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: const Icon(
-                FluentIcons.send,
-                size: 14,
-                color: Color(0xFF3A3000),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Hermes',
-              style: theme.typography.title?.copyWith(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              _titleForPath(currentPath),
-              style: theme.typography.caption?.copyWith(
-                color: const Color(0xFFB7BEC8),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: MoveWindow(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    child: const TextBox(
-                      placeholder:
-                          'Search requests, collections or environments',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const _WindowCaptionButtons(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _titleForPath(String path) {
-    switch (path) {
-      case '/collections':
-        return 'Collections';
-      case '/environments':
-        return 'Environments';
-      case '/curl':
-        return 'cURL Tools';
-      default:
-        return 'Request Workbench';
     }
   }
 }
@@ -343,33 +242,15 @@ class _GlowOrb extends StatelessWidget {
   }
 }
 
-class _WindowCaptionButtons extends StatelessWidget {
-  const _WindowCaptionButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    final buttonColors = WindowButtonColors(
-      iconNormal: const Color(0xFFB7BEC8),
-      mouseOver: const Color(0x221A1D21),
-      mouseDown: const Color(0x441A1D21),
-      iconMouseOver: Colors.white,
-      iconMouseDown: Colors.white,
-    );
-
-    final closeColors = WindowButtonColors(
-      iconNormal: const Color(0xFFB7BEC8),
-      mouseOver: const Color(0xFFD13438),
-      mouseDown: const Color(0xFFA4262C),
-      iconMouseOver: Colors.white,
-      iconMouseDown: Colors.white,
-    );
-
-    return Row(
-      children: <Widget>[
-        MinimizeWindowButton(colors: buttonColors),
-        MaximizeWindowButton(colors: buttonColors),
-        CloseWindowButton(colors: closeColors),
-      ],
-    );
+String _titleForPath(String path) {
+  switch (path) {
+    case '/collections':
+      return 'Collections';
+    case '/environments':
+      return 'Environments';
+    case '/curl':
+      return 'cURL Tools';
+    default:
+      return 'Request Workbench';
   }
 }

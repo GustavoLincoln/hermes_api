@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class SectionTitle extends StatelessWidget {
   const SectionTitle({
     required this.title,
@@ -12,25 +14,20 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typography = FluentTheme.of(context).typography;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           title,
-          style: typography.title?.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTheme.headlineSmStyle.copyWith(fontSize: 18),
         ),
         if (subtitle != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
             subtitle!,
-            style: typography.caption?.copyWith(
+            style: AppTheme.bodyMdStyle.copyWith(
               fontSize: 13,
-              color: const Color(0xFFB7BEC8),
+              color: AppTheme.onSurfaceVariant,
             ),
           ),
         ],

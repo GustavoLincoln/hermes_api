@@ -4,6 +4,7 @@ import 'package:hermes_api/app/shared/window_bar/widgets/title_bar_menu_button.d
 import 'package:hermes_api/app/shared/window_bar/widgets/title_bar_search_field.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AppWindowTitleBar extends StatelessWidget {
   const AppWindowTitleBar({
@@ -11,23 +12,25 @@ class AppWindowTitleBar extends StatelessWidget {
     required this.onToggleMenu,
     super.key,
     this.searchPlaceholder = 'Search requests, collections or environments',
+    this.isMenuOpen = false,
   });
 
   final String sectionTitle;
   final String searchPlaceholder;
   final VoidCallback onToggleMenu;
+  final bool isMenuOpen;
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-
     return WindowTitleBarBox(
       child: Container(
         height: 56,
         padding: const EdgeInsets.only(left: 12, right: 8),
         decoration: BoxDecoration(
-          color: const Color(0x44181B20),
-          border: Border(bottom: BorderSide(color: const Color(0x443D434C))),
+          color: AppTheme.surfaceLow.withValues(alpha: 0.94),
+          border: const Border(
+            bottom: BorderSide(color: AppTheme.outlineVariant),
+          ),
         ),
         child: Row(
           children: <Widget>[
@@ -35,25 +38,24 @@ class AppWindowTitleBar extends StatelessWidget {
               child: MoveWindow(
                 child: Row(
                   children: <Widget>[
-                    TitleBarMenuButton(onPressed: onToggleMenu),
+                    TitleBarMenuButton(
+                      onPressed: onToggleMenu,
+                      isMenuOpen: isMenuOpen,
+                    ),
                     const SizedBox(width: 10),
                     const HermesBrandBadge(),
                     const SizedBox(width: 10),
                     Text(
                       AppConstants.appName,
-                      style: theme.typography.bodyLarge?.copyWith(
+                      style: AppTheme.bodyLgStyle.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       sectionTitle,
-                      style: theme.typography.caption?.copyWith(
-                        fontSize: 12,
-                        color: const Color(0xFFB7BEC8),
-                      ),
+                      style: AppTheme.captionStyle.copyWith(fontSize: 12),
                     ),
                     const SizedBox(width: 18),
                     Flexible(
@@ -92,10 +94,10 @@ class HermesBrandBadge extends StatelessWidget {
       width: 22,
       height: 22,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFD700),
-        borderRadius: BorderRadius.circular(8),
+        color: AppTheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
       ),
-      child: const Icon(FluentIcons.send, size: 13, color: Color(0xFF3A3000)),
+      child: const Icon(FluentIcons.send, size: 13, color: AppTheme.onPrimary),
     );
   }
 }
@@ -106,19 +108,19 @@ class WindowCaptionButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonColors = WindowButtonColors(
-      iconNormal: const Color(0xFFB7BEC8),
-      mouseOver: const Color(0x221A1D21),
-      mouseDown: const Color(0x441A1D21),
-      iconMouseOver: Colors.white,
-      iconMouseDown: Colors.white,
+      iconNormal: AppTheme.onSurfaceVariant,
+      mouseOver: AppTheme.surfaceHigh,
+      mouseDown: AppTheme.surfaceHighest,
+      iconMouseOver: AppTheme.onSurface,
+      iconMouseDown: AppTheme.onSurface,
     );
 
     final closeColors = WindowButtonColors(
-      iconNormal: const Color(0xFFB7BEC8),
-      mouseOver: const Color(0xFFD13438),
-      mouseDown: const Color(0xFFA4262C),
-      iconMouseOver: Colors.white,
-      iconMouseDown: Colors.white,
+      iconNormal: AppTheme.onSurfaceVariant,
+      mouseOver: const Color(0xFF93000A),
+      mouseDown: const Color(0xFF690005),
+      iconMouseOver: AppTheme.error,
+      iconMouseDown: AppTheme.error,
     );
 
     return Row(

@@ -1,9 +1,16 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class TitleBarMenuButton extends StatelessWidget {
-  const TitleBarMenuButton({required this.onPressed, super.key});
+  const TitleBarMenuButton({
+    required this.onPressed,
+    this.isMenuOpen = false,
+    super.key,
+  });
 
   final VoidCallback onPressed;
+  final bool isMenuOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +26,21 @@ class TitleBarMenuButton extends StatelessWidget {
           ),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.pressed)) {
-              return const Color(0x331A1D21);
+              return AppTheme.surfaceHighest.withValues(alpha: 0.72);
             }
             if (states.contains(WidgetState.hovered)) {
-              return const Color(0x221A1D21);
+              return AppTheme.surfaceHigh.withValues(alpha: 0.88);
             }
             return Colors.transparent;
           }),
         ),
-        child: const Center(
-          child: Icon(FluentIcons.global_nav_button, size: 14),
+        child: Center(
+          child: Icon(
+            isMenuOpen
+                ? FluentIcons.close_pane_mirrored
+                : FluentIcons.global_nav_button,
+            size: isMenuOpen ? 14 : 14,
+          ),
         ),
       ),
     );

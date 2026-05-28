@@ -13,6 +13,10 @@ class TitleBarSearchField extends StatelessWidget {
     return TextBox(
       placeholder: placeholder,
       style: const TextStyle(fontSize: 12, height: 1.0),
+      prefix: const Padding(
+        padding: EdgeInsets.only(left: 8.0),
+        child: Icon(FluentIcons.search, size: 12.0),
+      ),
     );
   }
 }

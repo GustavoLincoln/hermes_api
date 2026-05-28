@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/panel_card.dart';
 import '../../../../shared/widgets/section_title.dart';
 import '../../domain/entities/api_request_entity.dart';
 import '../../domain/enums/http_method_enum.dart';
 import '../cubit/request_workbench_cubit.dart';
 import '../cubit/request_workbench_state.dart';
+import '../widgets/body_format_selector_widget.dart';
 
 class RequestPage extends StatefulWidget {
   const RequestPage({super.key});
@@ -24,6 +26,7 @@ class _RequestPageState extends State<RequestPage> {
   late final TextEditingController _bodyController;
   late final TextEditingController _curlController;
   BodyFormat _bodyFormat = BodyFormat.json;
+  BodyFormat _responseBodyFormat = BodyFormat.json;
 
   @override
   void initState() {
@@ -74,8 +77,9 @@ class _RequestPageState extends State<RequestPage> {
               if (requiresPageScroll) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
                       children: <Widget>[
                         if (stacked)
@@ -124,7 +128,8 @@ class _RequestPageState extends State<RequestPage> {
                             child: Row(
                               children: <Widget>[
                                 Expanded(
-                                    child: _buildCurlTools(context, state)),
+                                  child: _buildCurlTools(context, state),
+                                ),
                                 const SizedBox(width: 16),
                                 Expanded(child: _buildHistory(context, state)),
                               ],
@@ -314,14 +319,17 @@ class _RequestPageState extends State<RequestPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: <Widget>[
+                    _StatusCodePill(
+                      statusCode: response.statusCode,
+                    ),
                     _MetricPill(
-                        label: 'Status',
-                        value: '${response.statusCode ?? '-'}'),
+                      label: 'Time',
+                      value: '${response.duration.inMilliseconds} ms',
+                    ),
                     _MetricPill(
-                        label: 'Time',
-                        value: '${response.duration.inMilliseconds} ms'),
-                    _MetricPill(
-                        label: 'Headers', value: '${response.headers.length}'),
+                      label: 'Headers',
+                      value: '${response.headers.length}',
+                    ),
                   ],
                 ),
             ],
@@ -337,8 +345,9 @@ class _RequestPageState extends State<RequestPage> {
           if (response == null)
             const Expanded(
               child: Center(
-                child:
-                    Text('Send a request to inspect status, headers and body.'),
+                child: Text(
+                  'Send a request to inspect status, headers and body.',
+                ),
               ),
             )
           else
@@ -346,11 +355,16 @@ class _RequestPageState extends State<RequestPage> {
               child: Row(
                 children: <Widget>[
                   Expanded(
-                    child: _CodePanel(
-                      title: 'Body',
+                    child: _ResponseBodyPanel(
                       content: response.body.isEmpty
                           ? 'No body returned.'
                           : response.body,
+                      selectedFormat: _responseBodyFormat,
+                      onFormatChanged: (format) {
+                        setState(() {
+                          _responseBodyFormat = format;
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -440,9 +454,7 @@ class _RequestPageState extends State<RequestPage> {
           const SizedBox(height: 14),
           Expanded(
             child: state.history.isEmpty
-                ? const Center(
-                    child: Text('No local history yet.'),
-                  )
+                ? const Center(child: Text('No local history yet.'))
                 : ListView.separated(
                     itemCount: state.history.length,
                     separatorBuilder: (context, index) =>
@@ -469,22 +481,6 @@ class _RequestPageState extends State<RequestPage> {
       composing: TextRange.empty,
     );
   }
-}
-
-enum BodyFormat {
-  json('JSON'),
-  xml('XML'),
-  html('HTML'),
-  yaml('YAML'),
-  javascript('JavaScript'),
-  markdown('Markdown'),
-  raw('Raw'),
-  hex('Hex'),
-  base64('Base64');
-
-  const BodyFormat(this.label);
-
-  final String label;
 }
 
 class _RequestHeaderBar extends StatelessWidget {
@@ -530,31 +526,25 @@ class _RequestHeaderBar extends StatelessWidget {
       controller: urlController,
       placeholder: 'https://api.example.com/v1/users',
       onChanged: onUrlChanged,
-      style: const TextStyle(
-        fontFamily: 'JetBrains Mono',
-        fontSize: 13,
-      ),
+      style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
     );
 
-    final sendButton = SizedBox(
-      width: compact ? double.infinity : null,
-      child: FilledButton(
-        onPressed: state.isLoading ? null : onExecute,
-        child: state.isLoading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: ProgressRing(strokeWidth: 2),
-              )
-            : const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(FluentIcons.send, size: 14),
-                  SizedBox(width: 8),
-                  Text('Send'),
-                ],
-              ),
-      ),
+    final sendButton = FilledButton(
+      onPressed: state.isLoading ? null : onExecute,
+      child: state.isLoading
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: ProgressRing(strokeWidth: 2),
+            )
+          : const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(FluentIcons.send, size: 14),
+                SizedBox(width: 8),
+                Text('Send'),
+              ],
+            ),
     );
 
     if (compact) {
@@ -564,7 +554,7 @@ class _RequestHeaderBar extends StatelessWidget {
             children: <Widget>[
               Expanded(child: methodPicker),
               const SizedBox(width: 12),
-              sendButton,
+              Expanded(child: sendButton),
             ],
           ),
           const SizedBox(height: 12),
@@ -607,19 +597,13 @@ class _EditorField extends StatelessWidget {
       expands: true,
       minLines: null,
       placeholder: placeholder,
-      style: const TextStyle(
-        fontFamily: 'JetBrains Mono',
-        fontSize: 12.5,
-      ),
+      style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12.5),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          title,
-          style: FluentTheme.of(context).typography.subtitle,
-        ),
+        Text(title, style: FluentTheme.of(context).typography.subtitle),
         const SizedBox(height: 8),
         Expanded(child: textBox),
       ],
@@ -646,133 +630,32 @@ class _BodyEditorField extends StatelessWidget {
   Widget build(BuildContext context) {
     final lineCount = _countLines(controller.text);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compactToolbar = constraints.maxWidth < 620;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (compactToolbar)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        'Body',
-                        style: FluentTheme.of(context).typography.subtitle,
-                      ),
-                      const Spacer(),
-                      Text(
-                        '$lineCount lines',
-                        style: FluentTheme.of(context)
-                            .typography
-                            .caption
-                            ?.copyWith(
-                              color: const Color(0xFFB7BEC8),
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: ComboBox<BodyFormat>(
-                          value: selectedFormat,
-                          items: BodyFormat.values
-                              .map(
-                                (format) => ComboBoxItem<BodyFormat>(
-                                  value: format,
-                                  child: Text(format.label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              onFormatChanged(value);
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Button(
-                        onPressed: onFormatPressed,
-                        child: const Text('Format'),
-                      ),
-                    ],
-                  ),
-                ],
-              )
-            else
-              Row(
-                children: <Widget>[
-                  Text(
-                    'Body',
-                    style: FluentTheme.of(context).typography.subtitle,
-                  ),
-                  const Spacer(),
-                  Text(
-                    '$lineCount lines',
-                    style: FluentTheme.of(context).typography.caption?.copyWith(
-                          color: const Color(0xFFB7BEC8),
-                        ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 140,
-                    child: ComboBox<BodyFormat>(
-                      value: selectedFormat,
-                      items: BodyFormat.values
-                          .map(
-                            (format) => ComboBoxItem<BodyFormat>(
-                              value: format,
-                              child: Text(format.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          onFormatChanged(value);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Button(
-                    onPressed: onFormatPressed,
-                    child: const Text('Format'),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: TextBox(
-                controller: controller,
-                onChanged: onChanged,
-                maxLines: null,
-                expands: true,
-                minLines: null,
-                placeholder: '{\n  "name": "Hermes"\n}',
-                style: const TextStyle(
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: 12.5,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        BodyFormatSelectorWidget(
+          title: 'Body',
+          lineCount: lineCount,
+          selectedFormat: selectedFormat,
+          onFormatChanged: onFormatChanged,
+          actionLabel: 'Format',
+          onActionPressed: onFormatPressed,
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: _LineNumberedTextBox(
+            controller: controller,
+            onChanged: onChanged,
+            placeholder: '{\n  "name": "Hermes"\n}',
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _MetricPill extends StatelessWidget {
-  const _MetricPill({
-    required this.label,
-    required this.value,
-  });
+  const _MetricPill({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -788,12 +671,99 @@ class _MetricPill extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
+        style: FluentTheme.of(
+          context,
+        ).typography.caption?.copyWith(color: const Color(0xFFF3F5F7)),
+      ),
+    );
+  }
+}
+
+class _StatusCodePill extends StatelessWidget {
+  const _StatusCodePill({required this.statusCode});
+
+  final int? statusCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = _statusTone(statusCode);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: tone.background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tone.border),
+      ),
+      child: Text(
+        'Status: ${statusCode ?? '-'}',
         style: FluentTheme.of(context).typography.caption?.copyWith(
-              color: const Color(0xFFF3F5F7),
+              color: tone.foreground,
+              fontWeight: FontWeight.w700,
             ),
       ),
     );
   }
+}
+
+_StatusTone _statusTone(int? statusCode) {
+  if (statusCode == null) {
+    return const _StatusTone(
+      foreground: Color(0xFFF3F5F7),
+      background: Color(0x331A1D21),
+      border: Color(0x443D434C),
+    );
+  }
+
+  if (statusCode >= 200 && statusCode < 300) {
+    return const _StatusTone(
+      foreground: AppTheme.success,
+      background: Color(0x1F73C991),
+      border: Color(0x4473C991),
+    );
+  }
+
+  if (statusCode >= 300 && statusCode < 400) {
+    return const _StatusTone(
+      foreground: AppTheme.info,
+      background: Color(0x1F8BB8FF),
+      border: Color(0x448BB8FF),
+    );
+  }
+
+  if (statusCode >= 400 && statusCode < 500) {
+    return const _StatusTone(
+      foreground: AppTheme.warning,
+      background: Color(0x1FE9C400),
+      border: Color(0x44E9C400),
+    );
+  }
+
+  if (statusCode >= 500) {
+    return const _StatusTone(
+      foreground: AppTheme.error,
+      background: Color(0x1FFFB4AB),
+      border: Color(0x44FFB4AB),
+    );
+  }
+
+  return const _StatusTone(
+    foreground: Color(0xFFF3F5F7),
+    background: Color(0x331A1D21),
+    border: Color(0x443D434C),
+  );
+}
+
+class _StatusTone {
+  const _StatusTone({
+    required this.foreground,
+    required this.background,
+    required this.border,
+  });
+
+  final Color foreground;
+  final Color background;
+  final Color border;
 }
 
 int _countLines(String value) {
@@ -893,10 +863,7 @@ String _formatMarkup(String value) {
 }
 
 class _CodePanel extends StatelessWidget {
-  const _CodePanel({
-    required this.title,
-    required this.content,
-  });
+  const _CodePanel({required this.title, required this.content});
 
   final String title;
   final String content;
@@ -914,10 +881,7 @@ class _CodePanel extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            Text(
-              title,
-              style: FluentTheme.of(context).typography.subtitle,
-            ),
+            Text(title, style: FluentTheme.of(context).typography.subtitle),
             const SizedBox(height: 10),
             SelectableText(
               content,
@@ -935,11 +899,252 @@ class _CodePanel extends StatelessWidget {
   }
 }
 
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({
-    required this.request,
-    required this.onTap,
+class _ResponseBodyPanel extends StatelessWidget {
+  const _ResponseBodyPanel({
+    required this.content,
+    required this.selectedFormat,
+    required this.onFormatChanged,
   });
+
+  final String content;
+  final BodyFormat selectedFormat;
+  final ValueChanged<BodyFormat> onFormatChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedContent = _tryFormatBody(content, selectedFormat);
+    final lineCount = _countLines(formattedContent);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xAA0F1114),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x443D434C)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            BodyFormatSelectorWidget(
+              title: 'Body',
+              lineCount: lineCount,
+              selectedFormat: selectedFormat,
+              onFormatChanged: onFormatChanged,
+            ),
+            const SizedBox(height: 10),
+            Expanded(child: _LineNumberedCodeView(content: formattedContent)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LineNumberedTextBox extends StatefulWidget {
+  const _LineNumberedTextBox({
+    required this.controller,
+    required this.onChanged,
+    required this.placeholder,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final String placeholder;
+
+  @override
+  State<_LineNumberedTextBox> createState() => _LineNumberedTextBoxState();
+}
+
+class _LineNumberedTextBoxState extends State<_LineNumberedTextBox> {
+  final ScrollController _textScrollController = ScrollController();
+  final ScrollController _gutterScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _textScrollController.addListener(_syncGutter);
+  }
+
+  @override
+  void dispose() {
+    _textScrollController
+      ..removeListener(_syncGutter)
+      ..dispose();
+    _gutterScrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncGutter() {
+    if (!_gutterScrollController.hasClients) {
+      return;
+    }
+
+    final offset = _textScrollController.offset.clamp(
+      0.0,
+      _gutterScrollController.position.maxScrollExtent,
+    );
+
+    if ((_gutterScrollController.offset - offset).abs() > 0.5) {
+      _gutterScrollController.jumpTo(offset);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _LineNumberedEditorFrame(
+      lineCount: _countLines(widget.controller.text),
+      gutterController: _gutterScrollController,
+      child: TextBox(
+        controller: widget.controller,
+        onChanged: widget.onChanged,
+        maxLines: null,
+        expands: true,
+        minLines: null,
+        placeholder: widget.placeholder,
+        scrollController: _textScrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        style: const TextStyle(
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12.5,
+          height: 1.55,
+        ),
+      ),
+    );
+  }
+}
+
+class _LineNumberedCodeView extends StatefulWidget {
+  const _LineNumberedCodeView({required this.content});
+
+  final String content;
+
+  @override
+  State<_LineNumberedCodeView> createState() => _LineNumberedCodeViewState();
+}
+
+class _LineNumberedCodeViewState extends State<_LineNumberedCodeView> {
+  final ScrollController _contentScrollController = ScrollController();
+  final ScrollController _gutterScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _contentScrollController.addListener(_syncGutter);
+  }
+
+  @override
+  void dispose() {
+    _contentScrollController
+      ..removeListener(_syncGutter)
+      ..dispose();
+    _gutterScrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncGutter() {
+    if (!_gutterScrollController.hasClients) {
+      return;
+    }
+
+    final offset = _contentScrollController.offset.clamp(
+      0.0,
+      _gutterScrollController.position.maxScrollExtent,
+    );
+
+    if ((_gutterScrollController.offset - offset).abs() > 0.5) {
+      _gutterScrollController.jumpTo(offset);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _LineNumberedEditorFrame(
+      lineCount: _countLines(widget.content),
+      gutterController: _gutterScrollController,
+      child: SingleChildScrollView(
+        controller: _contentScrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: SelectableText(
+          widget.content,
+          style: const TextStyle(
+            fontFamily: 'JetBrains Mono',
+            fontSize: 12.5,
+            color: Color(0xFFF3F5F7),
+            height: 1.55,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LineNumberedEditorFrame extends StatelessWidget {
+  const _LineNumberedEditorFrame({
+    required this.lineCount,
+    required this.gutterController,
+    required this.child,
+  });
+
+  final int lineCount;
+  final ScrollController gutterController;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F2228),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0x443D434C)),
+      ),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 46,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Color(0xFF171A1F),
+                border: Border(right: BorderSide(color: Color(0x443D434C))),
+              ),
+              child: ListView.builder(
+                controller: gutterController,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                itemCount: lineCount,
+                itemBuilder: (context, index) {
+                  return SizedBox(
+                    height: 19.4,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Text(
+                          '${index + 1}',
+                          style: FluentTheme.of(context)
+                              .typography
+                              .caption
+                              ?.copyWith(
+                                fontFamily: 'JetBrains Mono',
+                                color: const Color(0xFF7E8794),
+                              ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryTile extends StatelessWidget {
+  const _HistoryTile({required this.request, required this.onTap});
 
   final ApiRequestEntity request;
   final VoidCallback onTap;

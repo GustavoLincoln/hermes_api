@@ -9,8 +9,8 @@ class RequestRepositoryImpl implements RequestRepository {
   const RequestRepositoryImpl({
     required RequestLocalDataSource localDataSource,
     required RequestRemoteDataSource remoteDataSource,
-  })  : _localDataSource = localDataSource,
-        _remoteDataSource = remoteDataSource;
+  }) : _localDataSource = localDataSource,
+       _remoteDataSource = remoteDataSource;
 
   final RequestLocalDataSource _localDataSource;
   final RequestRemoteDataSource _remoteDataSource;

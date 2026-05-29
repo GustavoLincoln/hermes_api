@@ -1,54 +1,46 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
+import '../ui/styles/colors_app.dart';
+import '../ui/styles/radius_app.dart';
+import '../ui/styles/text_styles.dart';
+
 class AppTheme {
   const AppTheme._();
 
-  static const Color background = Color(0xFF131313);
-  static const Color surface = Color(0xFF131313);
-  static const Color surfaceDim = Color(0xFF131313);
-  static const Color surfaceBright = Color(0xFF393939);
-  static const Color surfaceLowest = Color(0xFF0E0E0E);
-  static const Color surfaceLow = Color(0xFF1C1B1B);
-  static const Color surfaceContainer = Color(0xFF201F1F);
-  static const Color surfaceHigh = Color(0xFF2A2A2A);
-  static const Color surfaceHighest = Color(0xFF353534);
-  static const Color onSurface = Color(0xFFE5E2E1);
-  static const Color onSurfaceVariant = Color(0xFFD0C6AB);
-  static const Color inverseSurface = Color(0xFFE5E2E1);
-  static const Color inverseOnSurface = Color(0xFF313030);
-  static const Color outline = Color(0xFF999077);
-  static const Color outlineVariant = Color(0xFF4D4732);
-  static const Color surfaceTint = Color(0xFFE9C400);
-  static const Color primary = Color(0xFFFFF6DF);
-  static const Color onPrimary = Color(0xFF3A3000);
-  static const Color primaryContainer = Color(0xFFFFD700);
-  static const Color onPrimaryContainer = Color(0xFF705E00);
-  static const Color secondary = Color(0xFFFFDE56);
-  static const Color onSecondary = Color(0xFF3A3000);
-  static const Color secondaryContainer = Color(0xFFE5C100);
-  static const Color onSecondaryContainer = Color(0xFF604F00);
-  static const Color tertiary = Color(0xFFF8F6F5);
-  static const Color onTertiary = Color(0xFF303030);
-  static const Color tertiaryContainer = Color(0xFFDBD9D9);
-  static const Color error = Color(0xFFFFB4AB);
-  static const Color onError = Color(0xFF690005);
-  static const Color errorContainer = Color(0xFF93000A);
-  static const Color success = Color(0xFF73C991);
-  static const Color successMuted = Color(0xFF234031);
-  static const Color info = Color(0xFF8BB8FF);
-  static const Color warning = Color(0xFFE9C400);
-
-  static const double radiusSm = 4;
-  static const double radius = 8;
-  static const double radiusMd = 12;
-  static const double radiusLg = 16;
-  static const double radiusXl = 24;
-
-  static const double spacingXs = 4;
-  static const double spacingSm = 12;
-  static const double spacingMd = 16;
-  static const double spacingLg = 24;
-  static const double spacingXl = 32;
+  static const Color background = ColorsApp.background;
+  static const Color surface = ColorsApp.surface;
+  static const Color surfaceDim = ColorsApp.surfaceDim;
+  static const Color surfaceBright = ColorsApp.surfaceBright;
+  static const Color surfaceLowest = ColorsApp.surfaceLowest;
+  static const Color surfaceLow = ColorsApp.surfaceLow;
+  static const Color surfaceContainer = ColorsApp.surfaceContainer;
+  static const Color surfaceHigh = ColorsApp.surfaceHigh;
+  static const Color surfaceHighest = ColorsApp.surfaceHighest;
+  static const Color onSurface = ColorsApp.onSurface;
+  static const Color onSurfaceVariant = ColorsApp.onSurfaceVariant;
+  static const Color inverseSurface = ColorsApp.inverseSurface;
+  static const Color inverseOnSurface = ColorsApp.inverseOnSurface;
+  static const Color outline = ColorsApp.outline;
+  static const Color outlineVariant = ColorsApp.outlineVariant;
+  static const Color surfaceTint = ColorsApp.surfaceTint;
+  static const Color primary = ColorsApp.primary;
+  static const Color onPrimary = ColorsApp.onPrimary;
+  static const Color primaryContainer = ColorsApp.primaryContainer;
+  static const Color onPrimaryContainer = ColorsApp.onPrimaryContainer;
+  static const Color secondary = ColorsApp.secondary;
+  static const Color onSecondary = ColorsApp.onSecondary;
+  static const Color secondaryContainer = ColorsApp.secondaryContainer;
+  static const Color onSecondaryContainer = ColorsApp.onSecondaryContainer;
+  static const Color tertiary = ColorsApp.tertiary;
+  static const Color onTertiary = ColorsApp.onTertiary;
+  static const Color tertiaryContainer = ColorsApp.tertiaryContainer;
+  static const Color error = ColorsApp.error;
+  static const Color onError = ColorsApp.onError;
+  static const Color errorContainer = ColorsApp.errorContainer;
+  static const Color success = ColorsApp.success;
+  static const Color successMuted = ColorsApp.successMuted;
+  static const Color info = ColorsApp.info;
+  static const Color warning = ColorsApp.warning;
 
   static FluentThemeData dark() {
     return FluentThemeData(
@@ -85,18 +77,18 @@ class AppTheme {
         thickness: 4,
       ),
       typography: Typography.raw(
-        display: headlineLgStyle,
-        title: headlineSmStyle,
-        subtitle: bodyMdStyle.copyWith(
+        display: TextStyles.headlineLg,
+        title: TextStyles.headlineSm,
+        subtitle: TextStyles.bodyMd.copyWith(
           fontWeight: FontWeight.w600,
           color: onSurface,
         ),
-        body: bodyMdStyle,
-        bodyStrong: bodyMdStyle.copyWith(
+        body: TextStyles.bodyMd,
+        bodyStrong: TextStyles.bodyMd.copyWith(
           fontWeight: FontWeight.w600,
           color: onSurface,
         ),
-        caption: captionStyle,
+        caption: TextStyles.caption,
       ),
       buttonTheme: ButtonThemeData(
         filledButtonStyle: _primaryButtonStyle(),
@@ -114,7 +106,7 @@ class AppTheme {
 
     return BoxDecoration(
       color: color,
-      borderRadius: BorderRadius.circular(radiusLg),
+      borderRadius: BorderRadius.circular(RadiusApp.lg),
       border: Border.all(color: outlineVariant),
       gradient: LinearGradient(
         begin: Alignment.topCenter,
@@ -127,89 +119,14 @@ class AppTheme {
     );
   }
 
-  static TextStyle get headlineLgStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        height: 1.25,
-        letterSpacing: -0.64,
-        color: onSurface,
-      );
-
-  static TextStyle get headlineMdStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        height: 1.33,
-        letterSpacing: -0.24,
-        color: onSurface,
-      );
-
-  static TextStyle get headlineSmStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        height: 1.4,
-        color: onSurface,
-      );
-
-  static TextStyle get bodyLgStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-        color: onSurface,
-      );
-
-  static TextStyle get bodyMdStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.43,
-        color: onSurface,
-      );
-
-  static TextStyle get codeMdStyle => const TextStyle(
-        fontFamily: 'JetBrains Mono',
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.57,
-        color: onSurface,
-      );
-
-  static TextStyle get codeSmStyle => const TextStyle(
-        fontFamily: 'JetBrains Mono',
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-        color: onSurface,
-      );
-
-  static TextStyle get labelCapsStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        height: 1.45,
-        letterSpacing: 0.55,
-        color: onSurfaceVariant,
-      );
-
-  static TextStyle get captionStyle => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-        color: onSurfaceVariant,
-      );
-
   static ButtonStyle _primaryButtonStyle() {
     return ButtonStyle(
       padding: const WidgetStatePropertyAll(
-        EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(RadiusApp.base),
         ),
       ),
       foregroundColor: const WidgetStatePropertyAll(onPrimary),

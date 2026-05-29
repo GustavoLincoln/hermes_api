@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hermes_api/app/core/ui/styles/text_styles.dart';
 
 import '../../domain/enums/http_method_enum.dart';
 import '../cubit/request_workbench_cubit.dart';
@@ -74,7 +75,9 @@ class _RequestEditorWidgetState extends State<RequestEditorWidget> {
                           .toList(),
                       onChanged: (value) {
                         if (value != null) {
-                          context.read<RequestWorkbenchCubit>().updateMethod(value);
+                          context.read<RequestWorkbenchCubit>().updateMethod(
+                            value,
+                          );
                         }
                       },
                     ),
@@ -83,8 +86,13 @@ class _RequestEditorWidgetState extends State<RequestEditorWidget> {
                   Expanded(
                     child: TextFormField(
                       controller: _urlController,
-                      onChanged: context.read<RequestWorkbenchCubit>().updateUrl,
-                      style: GoogleFonts.jetBrainsMono(fontSize: 14, height: 1.45),
+                      onChanged: context
+                          .read<RequestWorkbenchCubit>()
+                          .updateUrl,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'URL',
                         hintText: 'https://api.example.com/users',
@@ -93,7 +101,9 @@ class _RequestEditorWidgetState extends State<RequestEditorWidget> {
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
-                    onPressed: state.isLoading ? null : context.read<RequestWorkbenchCubit>().execute,
+                    onPressed: state.isLoading
+                        ? null
+                        : context.read<RequestWorkbenchCubit>().execute,
                     icon: state.isLoading
                         ? const SizedBox(
                             width: 16,
@@ -114,7 +124,9 @@ class _RequestEditorWidgetState extends State<RequestEditorWidget> {
                         label: 'Headers',
                         hint: 'Authorization: Bearer token',
                         controller: _headersController,
-                        onChanged: context.read<RequestWorkbenchCubit>().updateHeaders,
+                        onChanged: context
+                            .read<RequestWorkbenchCubit>()
+                            .updateHeaders,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -123,7 +135,9 @@ class _RequestEditorWidgetState extends State<RequestEditorWidget> {
                         label: 'Query Params',
                         hint: 'page=1',
                         controller: _queryParamsController,
-                        onChanged: context.read<RequestWorkbenchCubit>().updateQueryParams,
+                        onChanged: context
+                            .read<RequestWorkbenchCubit>()
+                            .updateQueryParams,
                       ),
                     ),
                   ],
@@ -190,7 +204,8 @@ class _LabeledField extends StatelessWidget {
             expands: expands,
             minLines: expands ? null : 8,
             maxLines: expands ? null : 8,
-            style: GoogleFonts.jetBrainsMono(fontSize: 13, height: 1.55),
+            style: TextStyles.labelCaps,
+            // style: GoogleFonts.jetBrainsMono(fontSize: 13, height: 1.55),
             decoration: InputDecoration(
               hintText: hint,
               alignLabelWithHint: true,

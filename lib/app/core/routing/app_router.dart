@@ -11,6 +11,8 @@ import '../../modules/requests/presentation/cubit/request_workbench_cubit.dart';
 import '../../modules/requests/presentation/pages/request_page.dart';
 import '../../modules/requests/presentation/widgets/sidebar_widget.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/styles/radius_app.dart';
+import '../../core/ui/styles/text_styles.dart';
 import '../../shared/window_bar/widgets/app_window_title_bar.dart';
 
 class AppRouter {
@@ -83,40 +85,50 @@ class _HermesShellState extends State<_HermesShell> {
             colors: <Color>[AppTheme.surfaceLowest, AppTheme.surface],
           ),
         ),
-        child: Column(
-          children: <Widget>[
-            AppWindowTitleBar(
-              sectionTitle: widget.sectionTitle,
-              isMenuOpen: _isCompact,
-              onToggleMenu: () {
-                setState(() {
-                  _isCompact = !_isCompact;
-                });
-              },
-            ),
-            Expanded(
-              child: Row(
-                children: <Widget>[
-                  SidebarWidget(
-                    currentPath: widget.currentPath,
-                    isCollapsed: _isCompact,
-                    onToggle: () {
-                      setState(() {
-                        _isCompact = !_isCompact;
-                      });
-                    },
-                  ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final titleBarHeight =
+                constraints.maxHeight <= 36 ? constraints.maxHeight : 56.0;
+            final showBody = constraints.maxHeight > titleBarHeight + 12;
+
+            return Column(
+              children: <Widget>[
+                AppWindowTitleBar(
+                  height: titleBarHeight,
+                  sectionTitle: widget.sectionTitle,
+                  isMenuOpen: _isCompact,
+                  onToggleMenu: () {
+                    setState(() {
+                      _isCompact = !_isCompact;
+                    });
+                  },
+                ),
+                if (showBody)
                   Expanded(
-                    child: _ShellBody(
-                      currentPath: widget.currentPath,
-                      sectionTitle: widget.sectionTitle,
-                      child: widget.child,
+                    child: Row(
+                      children: <Widget>[
+                        SidebarWidget(
+                          currentPath: widget.currentPath,
+                          isCollapsed: _isCompact,
+                          onToggle: () {
+                            setState(() {
+                              _isCompact = !_isCompact;
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: _ShellBody(
+                            currentPath: widget.currentPath,
+                            sectionTitle: widget.sectionTitle,
+                            child: widget.child,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -231,7 +243,7 @@ class _WorkspaceHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: AppTheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+              borderRadius: BorderRadius.circular(RadiusApp.xl),
               border: Border.all(color: AppTheme.outlineVariant),
             ),
             child: Row(
@@ -245,7 +257,7 @@ class _WorkspaceHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   sectionTitle,
-                  style: AppTheme.bodyMdStyle.copyWith(
+                  style: TextStyles.bodyMd.copyWith(
                     color: AppTheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
@@ -295,7 +307,7 @@ class _WorkspaceLink extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: AppTheme.bodyMdStyle.copyWith(
+            style: TextStyles.bodyMd.copyWith(
               color: color,
               fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             ),

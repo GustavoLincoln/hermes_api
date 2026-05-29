@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hermes_api/app/core/ui/styles/text_styles.dart';
+import 'package:hermes_api/app/modules/requests/presentation/widgets/status_code_pill_widget.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/panel_card.dart';
 import '../../../../shared/widgets/section_title.dart';
+import '../../../../shared/widgets/tab_bar_widget.dart';
 import '../../domain/entities/api_request_entity.dart';
 import '../../domain/enums/http_method_enum.dart';
 import '../cubit/request_workbench_cubit.dart';
 import '../cubit/request_workbench_state.dart';
 import '../widgets/body_format_selector_widget.dart';
+import '../widgets/query_params_table_widget.dart';
 
 class RequestPage extends StatefulWidget {
   const RequestPage({super.key});
@@ -22,7 +25,6 @@ class RequestPage extends StatefulWidget {
 class _RequestPageState extends State<RequestPage> {
   late final TextEditingController _urlController;
   late final TextEditingController _headersController;
-  late final TextEditingController _queryController;
   late final TextEditingController _bodyController;
   late final TextEditingController _curlController;
   BodyFormat _bodyFormat = BodyFormat.json;
@@ -34,7 +36,6 @@ class _RequestPageState extends State<RequestPage> {
     final state = context.read<RequestWorkbenchCubit>().state;
     _urlController = TextEditingController(text: state.url);
     _headersController = TextEditingController(text: state.headersText);
-    _queryController = TextEditingController(text: state.queryParamsText);
     _bodyController = TextEditingController(text: state.body);
     _curlController = TextEditingController(text: state.curlInput);
   }
@@ -43,7 +44,6 @@ class _RequestPageState extends State<RequestPage> {
   void dispose() {
     _urlController.dispose();
     _headersController.dispose();
-    _queryController.dispose();
     _bodyController.dispose();
     _curlController.dispose();
     super.dispose();
@@ -55,13 +55,11 @@ class _RequestPageState extends State<RequestPage> {
       listenWhen: (previous, current) =>
           previous.url != current.url ||
           previous.headersText != current.headersText ||
-          previous.queryParamsText != current.queryParamsText ||
           previous.body != current.body ||
           previous.curlInput != current.curlInput,
       listener: (context, state) {
         _syncController(_urlController, state.url);
         _syncController(_headersController, state.headersText);
-        _syncController(_queryController, state.queryParamsText);
         _syncController(_bodyController, state.body);
         _syncController(_curlController, state.curlInput);
       },
@@ -71,7 +69,8 @@ class _RequestPageState extends State<RequestPage> {
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 1200;
               final compactBottomSection = constraints.maxWidth < 980;
-              final requiresPageScroll = constraints.maxHeight <
+              final requiresPageScroll =
+                  constraints.maxHeight <
                   (stacked || compactBottomSection ? 980 : 720);
 
               if (requiresPageScroll) {
@@ -196,52 +195,6 @@ class _RequestPageState extends State<RequestPage> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compactHeader = constraints.maxWidth < 560;
-          final compactFields = constraints.maxWidth < 760;
-
-          final fieldsSection = compactFields
-              ? Column(
-                  children: <Widget>[
-                    Expanded(
-                      child: _EditorField(
-                        title: 'Headers',
-                        placeholder: 'Authorization: Bearer token',
-                        controller: _headersController,
-                        onChanged: cubit.updateHeaders,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: _EditorField(
-                        title: 'Query Params',
-                        placeholder: 'page=1',
-                        controller: _queryController,
-                        onChanged: cubit.updateQueryParams,
-                      ),
-                    ),
-                  ],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Expanded(
-                      child: _EditorField(
-                        title: 'Headers',
-                        placeholder: 'Authorization: Bearer token',
-                        controller: _headersController,
-                        onChanged: cubit.updateHeaders,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _EditorField(
-                        title: 'Query Params',
-                        placeholder: 'page=1',
-                        controller: _queryController,
-                        onChanged: cubit.updateQueryParams,
-                      ),
-                    ),
-                  ],
-                );
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,32 +214,54 @@ class _RequestPageState extends State<RequestPage> {
                 onExecute: cubit.execute,
               ),
               const SizedBox(height: 18),
-              Expanded(child: fieldsSection),
-              const SizedBox(height: 16),
               Expanded(
-                child: _BodyEditorField(
-                  controller: _bodyController,
-                  onChanged: cubit.updateBody,
-                  selectedFormat: _bodyFormat,
-                  onFormatChanged: (format) {
-                    setState(() {
-                      _bodyFormat = format;
-                    });
-                  },
-                  onFormatPressed: () {
-                    final formattedBody = _tryFormatBody(
-                      _bodyController.text,
-                      _bodyFormat,
-                    );
-                    _bodyController.value = _bodyController.value.copyWith(
-                      text: formattedBody,
-                      selection: TextSelection.collapsed(
-                        offset: formattedBody.length,
+                child: TabBarWidget(
+                  items: <TabBarItem>[
+                    TabBarItem(
+                      label: 'Headers',
+                      child: _EditorField(
+                        title: 'Headers',
+                        placeholder: 'Authorization: Bearer token',
+                        controller: _headersController,
+                        onChanged: cubit.updateHeaders,
                       ),
-                      composing: TextRange.empty,
-                    );
-                    cubit.updateBody(formattedBody);
-                  },
+                    ),
+                    TabBarItem(
+                      label: 'Query Params',
+                      child: QueryParamsTableWidget(
+                        value: state.queryParamsText,
+                        onChanged: cubit.updateQueryParams,
+                      ),
+                    ),
+                    TabBarItem(
+                      label: 'Body',
+                      child: _BodyEditorField(
+                        controller: _bodyController,
+                        onChanged: cubit.updateBody,
+                        selectedFormat: _bodyFormat,
+                        onFormatChanged: (format) {
+                          setState(() {
+                            _bodyFormat = format;
+                          });
+                        },
+                        onFormatPressed: () {
+                          final formattedBody = _tryFormatBody(
+                            _bodyController.text,
+                            _bodyFormat,
+                          );
+                          _bodyController.value = _bodyController.value
+                              .copyWith(
+                                text: formattedBody,
+                                selection: TextSelection.collapsed(
+                                  offset: formattedBody.length,
+                                ),
+                                composing: TextRange.empty,
+                              );
+                          cubit.updateBody(formattedBody);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -319,9 +294,7 @@ class _RequestPageState extends State<RequestPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: <Widget>[
-                    _StatusCodePill(
-                      statusCode: response.statusCode,
-                    ),
+                    StatusCodePillWidget(statusCode: response.statusCode),
                     _MetricPill(
                       label: 'Time',
                       value: '${response.duration.inMilliseconds} ms',
@@ -510,7 +483,10 @@ class _RequestHeaderBar extends StatelessWidget {
             .map(
               (method) => ComboBoxItem<HttpMethodEnum>(
                 value: method,
-                child: Text(method.label),
+                child: Text(
+                  method.label,
+                  style: TextStyles.labelCaps.copyWith(color: method.color),
+                ),
               ),
             )
             .toList(),
@@ -677,93 +653,6 @@ class _MetricPill extends StatelessWidget {
       ),
     );
   }
-}
-
-class _StatusCodePill extends StatelessWidget {
-  const _StatusCodePill({required this.statusCode});
-
-  final int? statusCode;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = _statusTone(statusCode);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: tone.background,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: tone.border),
-      ),
-      child: Text(
-        'Status: ${statusCode ?? '-'}',
-        style: FluentTheme.of(context).typography.caption?.copyWith(
-              color: tone.foreground,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
-  }
-}
-
-_StatusTone _statusTone(int? statusCode) {
-  if (statusCode == null) {
-    return const _StatusTone(
-      foreground: Color(0xFFF3F5F7),
-      background: Color(0x331A1D21),
-      border: Color(0x443D434C),
-    );
-  }
-
-  if (statusCode >= 200 && statusCode < 300) {
-    return const _StatusTone(
-      foreground: AppTheme.success,
-      background: Color(0x1F73C991),
-      border: Color(0x4473C991),
-    );
-  }
-
-  if (statusCode >= 300 && statusCode < 400) {
-    return const _StatusTone(
-      foreground: AppTheme.info,
-      background: Color(0x1F8BB8FF),
-      border: Color(0x448BB8FF),
-    );
-  }
-
-  if (statusCode >= 400 && statusCode < 500) {
-    return const _StatusTone(
-      foreground: AppTheme.warning,
-      background: Color(0x1FE9C400),
-      border: Color(0x44E9C400),
-    );
-  }
-
-  if (statusCode >= 500) {
-    return const _StatusTone(
-      foreground: AppTheme.error,
-      background: Color(0x1FFFB4AB),
-      border: Color(0x44FFB4AB),
-    );
-  }
-
-  return const _StatusTone(
-    foreground: Color(0xFFF3F5F7),
-    background: Color(0x331A1D21),
-    border: Color(0x443D434C),
-  );
-}
-
-class _StatusTone {
-  const _StatusTone({
-    required this.foreground,
-    required this.background,
-    required this.border,
-  });
-
-  final Color foreground;
-  final Color background;
-  final Color border;
 }
 
 int _countLines(String value) {
@@ -1121,9 +1010,7 @@ class _LineNumberedEditorFrame extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 10),
                         child: Text(
                           '${index + 1}',
-                          style: FluentTheme.of(context)
-                              .typography
-                              .caption
+                          style: FluentTheme.of(context).typography.caption
                               ?.copyWith(
                                 fontFamily: 'JetBrains Mono',
                                 color: const Color(0xFF7E8794),

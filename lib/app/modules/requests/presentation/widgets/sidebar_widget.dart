@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/ui/styles/radius_app.dart';
+import '../../../../core/ui/styles/text_styles.dart';
 
 class SidebarWidget extends StatelessWidget {
   const SidebarWidget({
@@ -87,7 +89,7 @@ class SidebarWidget extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                           child: Text(
                             'WORKSPACE',
-                            style: AppTheme.labelCapsStyle,
+                            style: TextStyles.labelCaps,
                           ),
                         ),
                       ],
@@ -132,7 +134,7 @@ class SidebarWidget extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                           child: Text(
                             'ACTIVE SERVICES',
-                            style: AppTheme.labelCapsStyle,
+                            style: TextStyles.labelCaps,
                           ),
                         ),
                         _SidebarServiceTile(
@@ -210,7 +212,7 @@ class _SidebarBrand extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             color: hovered ? AppTheme.surfaceHigh : AppTheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            borderRadius: BorderRadius.circular(RadiusApp.md),
             border: Border.all(color: AppTheme.outlineVariant),
           ),
           child: Icon(
@@ -246,7 +248,7 @@ class _SidebarBrand extends StatelessWidget {
                 AppConstants.appName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTheme.headlineSmStyle.copyWith(
+                style: TextStyles.headlineSm.copyWith(
                   color: AppTheme.secondary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -254,7 +256,7 @@ class _SidebarBrand extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 'Swift Delivery',
-                style: AppTheme.labelCapsStyle,
+                style: TextStyles.labelCaps,
               ),
             ],
           ),
@@ -278,7 +280,7 @@ class _BrandBadge extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: AppTheme.secondary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        borderRadius: BorderRadius.circular(RadiusApp.md),
         border: Border.all(
           color: AppTheme.secondary.withValues(alpha: 0.26),
         ),
@@ -331,7 +333,7 @@ class _SidebarActionButton extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             color: background,
-            borderRadius: BorderRadius.circular(AppTheme.radius),
+            borderRadius: BorderRadius.circular(RadiusApp.base),
             border: Border.all(
               color: highlighted ? Colors.transparent : AppTheme.outlineVariant,
             ),
@@ -346,7 +348,7 @@ class _SidebarActionButton extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       label,
-                      style: AppTheme.bodyMdStyle.copyWith(
+                      style: TextStyles.bodyMd.copyWith(
                         color: foreground,
                         fontWeight: FontWeight.w700,
                       ),
@@ -402,7 +404,7 @@ class _SidebarNavItem extends StatelessWidget {
               height: dense ? 40 : 44,
               decoration: BoxDecoration(
                 color: background,
-                borderRadius: BorderRadius.circular(AppTheme.radius),
+                borderRadius: BorderRadius.circular(RadiusApp.base),
                 border: Border.all(
                   color: selected
                       ? AppTheme.secondary.withValues(alpha: 0.55)
@@ -423,7 +425,7 @@ class _SidebarNavItem extends StatelessWidget {
                             label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTheme.bodyMdStyle.copyWith(
+                            style: TextStyles.bodyMd.copyWith(
                               color: foreground,
                               fontWeight:
                                   selected ? FontWeight.w600 : FontWeight.w400,
@@ -456,7 +458,7 @@ class _SidebarServiceTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
+        borderRadius: BorderRadius.circular(RadiusApp.base),
         border: Border.all(color: AppTheme.outlineVariant),
       ),
       child: Row(
@@ -468,7 +470,7 @@ class _SidebarServiceTile extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.bodyMdStyle.copyWith(
+              style: TextStyles.bodyMd.copyWith(
                 color: AppTheme.onSurfaceVariant,
               ),
             ),
@@ -491,7 +493,7 @@ class _CollapsedUtilityIcon extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
+        borderRadius: BorderRadius.circular(RadiusApp.base),
         border: Border.all(color: AppTheme.outlineVariant),
       ),
       alignment: Alignment.center,

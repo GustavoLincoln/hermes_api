@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/ui/styles/text_styles.dart';
 
 class SectionTitle extends StatelessWidget {
   const SectionTitle({
@@ -19,13 +20,13 @@ class SectionTitle extends StatelessWidget {
       children: <Widget>[
         Text(
           title,
-          style: AppTheme.headlineSmStyle.copyWith(fontSize: 18),
+          style: TextStyles.headlineSm.copyWith(fontSize: 18),
         ),
         if (subtitle != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
             subtitle!,
-            style: AppTheme.bodyMdStyle.copyWith(
+            style: TextStyles.bodyMd.copyWith(
               fontSize: 13,
               color: AppTheme.onSurfaceVariant,
             ),
